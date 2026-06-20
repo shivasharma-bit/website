@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { sleep } from '../lib/utils';
+import { searchService } from '../services/api/search.service';
 import type { User } from '../types/core.types';
 
 export type SearchResultType = 'person' | 'post' | 'company' | 'topic';
@@ -113,9 +114,23 @@ export function useSearch(debounceMs = 280): UseSearchReturn {
     setSearching(true);
     const timer = setTimeout(async () => {
       if (controller.signal.aborted) return;
-      await sleep(180);
-      if (controller.signal.aborted) return;
-      setResults(mockSearch(query));
+      try {
+        const data = await searchService.search(query);
+        if (controller.signal.aborted) return;
+        const results: SearchResult[] = [
+          ...data.persons.map(p => ({
+            id: p.id, type: 'person' as SearchResultType,
+            title: p.displayName, subtitle: p.headline,
+            avatarUrl: p.avatarUrl, href: `/profile/${p.username}`,
+          })),
+          ...data.topics.map(t => ({
+            id: `topic_${t.tag}`, type: 'topic' as SearchResultType,
+            title: `#${t.tag}`, subtitle: 'Topic',
+            href: `/explore?topic=${t.tag}`,
+          })),
+        ];
+        setResults(results.slice(0, 8));
+      } catch {}
       setSearching(false);
     }, debounceMs);
 

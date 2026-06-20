@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar } from '../shared/Avatar';
 import { cn, formatRelativeTime } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
+import { spotlightsService } from '../../services/api/spotlights.service';
 
 interface Spotlight {
   id:          string;
@@ -21,50 +22,7 @@ interface Spotlight {
   isViewed:    boolean;
 }
 
-// ─── Mock spotlights ──────────────────────────────────────────────────────────
-
-const MOCK_SPOTLIGHTS: Spotlight[] = [
-  {
-    id: 'sp1',
-    author: { id: 'u10', username: 'james.okafor', displayName: 'James', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80', headline: 'Sr. Engineer at Vercel' },
-    coverUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=80',
-    caption: 'Shipped our new component library today',
-    createdAt: new Date(Date.now() - 2 * 3600_000).toISOString(),
-    isViewed: false,
-  },
-  {
-    id: 'sp2',
-    author: { id: 'u11', username: 'priya.sundaram', displayName: 'Priya', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80', headline: 'Product Lead at Linear' },
-    coverUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80',
-    caption: 'Linear\'s roadmap planning process',
-    createdAt: new Date(Date.now() - 4 * 3600_000).toISOString(),
-    isViewed: false,
-  },
-  {
-    id: 'sp3',
-    author: { id: 'u12', username: 'tom.eriksson', displayName: 'Tom', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80', headline: 'Founder at Loom' },
-    coverUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
-    caption: 'Behind the scenes: async culture at Loom',
-    createdAt: new Date(Date.now() - 6 * 3600_000).toISOString(),
-    isViewed: true,
-  },
-  {
-    id: 'sp4',
-    author: { id: 'u13', username: 'arjun.mehta', displayName: 'Arjun', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&q=80', headline: 'Staff Designer at Notion' },
-    coverUrl: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=400&q=80',
-    caption: 'Notion\'s new AI design explorations',
-    createdAt: new Date(Date.now() - 8 * 3600_000).toISOString(),
-    isViewed: true,
-  },
-  {
-    id: 'sp5',
-    author: { id: 'u14', username: 'selin.kaya', displayName: 'Selin', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&q=80', headline: 'Creative Director at Figma' },
-    coverUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&q=80',
-    caption: 'Config 2024 prep is underway',
-    createdAt: new Date(Date.now() - 10 * 3600_000).toISOString(),
-    isViewed: true,
-  },
-];
+// Spotlights loaded from API
 
 // ─── Spotlight viewer modal ────────────────────────────────────────────────────
 
@@ -191,7 +149,20 @@ function SpotlightViewer({ spotlights, initialIndex, onClose }: SpotlightViewerP
 
 export function SpotlightRail() {
   const { user }                            = useAuth();
-  const [spotlights, setSpotlights]         = useState<Spotlight[]>(MOCK_SPOTLIGHTS);
+  const [spotlights, setSpotlights]         = useState<Spotlight[]>([]);
+
+  useEffect(() => {
+    spotlightsService.getAll()
+      .then(data => setSpotlights(data.map(s => ({
+        id:        s.id,
+        author:    { id: s.user.id, username: s.user.username, displayName: s.user.displayName, avatarUrl: s.user.avatarUrl, headline: '' },
+        coverUrl:  s.coverUrl,
+        caption:   s.caption ?? '',
+        createdAt: s.createdAt,
+        isViewed:  false,
+      }))))
+      .catch(() => {});
+  }, []);
   const [viewerIndex, setViewerIndex]       = useState<number | null>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -200,8 +171,10 @@ export function SpotlightRail() {
 
   function openSpotlight(index: number) {
     if (isDragging.current) return;
+    const s = spotlights[index];
+    if (s) spotlightsService.view(s.id).catch(() => {});
     setSpotlights(prev =>
-      prev.map((s, i) => (i === index ? { ...s, isViewed: true } : s))
+      prev.map((sp, i) => (i === index ? { ...sp, isViewed: true } : sp))
     );
     setViewerIndex(index);
   }

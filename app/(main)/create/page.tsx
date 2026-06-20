@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+'use client';
+
+import React from 'react';
 import { PostComposer } from '../../components/feed/PostComposer';
 import { PageWrapper, SingleColLayout } from '../../components/layout/PageWrapper';
-
-export const metadata: Metadata = { title: 'Create' };
 
 export default function CreatePage() {
   return (

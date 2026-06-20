@@ -4,6 +4,7 @@ import React, {
   createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode,
 } from 'react';
 import type { Notification } from '../types/core.types';
+import { wsService } from '../services/api/websocket.service';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.forge.app/v1';
 
@@ -28,6 +29,15 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [isLoading,     setIsLoading]     = useState(true);
   const [hasMore,       setHasMore]       = useState(true);
   const pageRef = useRef(1);
+
+  useEffect(() => {
+    const unsub = wsService.on(evt => {
+      if (evt.event === 'notification.new') {
+        setNotifications(prev => [evt.data, ...prev]);
+      }
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     async function initialLoad() {

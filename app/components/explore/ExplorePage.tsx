@@ -10,27 +10,11 @@ import { VerifiedBadge } from '../../components/shared/Primitives';
 import { staggerContainer, staggerItem } from '../../lib/transitions';
 import { cn, formatNumber, sleep } from '../../lib/utils';
 import { profileService } from '../../services/api/profile.service';
+import { exploreService } from '../../services/api/explore.service';
+import type { TrendingTopic, FeaturedCompany } from '../../services/api/explore.service';
 import type { User } from '../../types/core.types';
 
-const TRENDING_TOPICS = [
-  { tag: 'DesignSystems',  posts: 2840  },
-  { tag: 'AIProducts',     posts: 14200 },
-  { tag: 'BuildInPublic',  posts: 7630  },
-  { tag: 'FrontendDev',    posts: 9100  },
-  { tag: 'ProductStrategy',posts: 3420  },
-  { tag: 'OpenSource',     posts: 5600  },
-  { tag: 'RemoteWork',     posts: 4100  },
-  { tag: 'CareerGrowth',   posts: 6800  },
-];
-
-const FEATURED_COMPANIES = [
-  { name: 'Vercel',        desc: 'Frontend cloud platform',       logo: null, followers: 128_000 },
-  { name: 'Linear',        desc: 'Modern issue tracking',         logo: null, followers: 84_000  },
-  { name: 'Figma',         desc: 'Collaborative design tool',     logo: null, followers: 312_000 },
-  { name: 'Notion',        desc: 'All-in-one workspace',          logo: null, followers: 441_000 },
-  { name: 'Anthropic',     desc: 'AI safety and research',        logo: null, followers: 96_000  },
-  { name: 'Raycast',       desc: 'Supercharged productivity',     logo: null, followers: 52_000  },
-];
+// Data loaded from API
 
 function PeopleGrid({ users, onFollow }: { users: User[]; onFollow: (id: string) => void }) {
   const [followed, setFollowed] = useState<Set<string>>(new Set());
@@ -87,11 +71,22 @@ export function ExplorePage() {
   const router      = useSearchParams();
   const navRouter   = useRouter();
   const [users,     setUsers]     = useState<User[]>([]);
+  const [topics,    setTopics]    = useState<TrendingTopic[]>([]);
+  const [companies, setCompanies] = useState<FeaturedCompany[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search,    setSearch]    = useState('');
 
   useEffect(() => {
-    profileService.getSuggestedUsers().then(u => { setUsers(u); setIsLoading(false); });
+    Promise.all([
+      exploreService.getSuggestedUsers().catch(() => [] as User[]),
+      exploreService.getTrendingTopics().catch(() => [] as TrendingTopic[]),
+      exploreService.getFeaturedCompanies().catch(() => [] as FeaturedCompany[]),
+    ]).then(([u, t, c]) => {
+      setUsers(u);
+      setTopics(t);
+      setCompanies(c);
+      setIsLoading(false);
+    });
   }, []);
 
   function handleSearch(e: React.FormEvent) {
@@ -127,7 +122,7 @@ export function ExplorePage() {
         <section className="mb-8">
           <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Trending topics</h2>
           <div className="flex flex-wrap gap-2">
-            {TRENDING_TOPICS.map(t => (
+            {topics.map(t => (
               <Link
                 key={t.tag}
                 href={`/explore?topic=${t.tag}`}
@@ -140,7 +135,7 @@ export function ExplorePage() {
               >
                 <span className="text-[var(--color-text-tertiary)]">#</span>
                 {t.tag}
-                <span className="text-[10px] text-[var(--color-text-tertiary)]">{formatNumber(t.posts)}</span>
+                <span className="text-[10px] text-[var(--color-text-tertiary)]">{formatNumber(t.postCount)}</span>
               </Link>
             ))}
           </div>
@@ -173,7 +168,7 @@ export function ExplorePage() {
         <section>
           <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Featured companies</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {FEATURED_COMPANIES.map((co, i) => (
+            {companies.map((co, i) => (
               <motion.div
                 key={co.name}
                 initial={{ opacity: 0, y: 10 }}
@@ -182,12 +177,14 @@ export function ExplorePage() {
                 className="card p-4 flex items-center gap-3 hover:shadow-[var(--shadow-elevated)] transition-shadow"
               >
                 <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-muted)] flex items-center justify-center shrink-0 border border-[var(--color-border)]">
-                  <span className="text-sm font-bold text-[var(--color-brand)]">{co.name[0]}</span>
+                  {co.logoUrl
+                    ? <img src={co.logoUrl} alt={co.name} className="w-6 h-6 object-contain" />
+                    : <span className="text-sm font-bold text-[var(--color-brand)]">{co.name[0]}</span>
+                  }
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{co.name}</p>
-                  <p className="text-xs text-[var(--color-text-secondary)] truncate">{co.desc}</p>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">{formatNumber(co.followers)} followers</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">{formatNumber(co.employeeCount)} employees</p>
                 </div>
                 <button className="btn btn-secondary h-7 text-xs shrink-0">Follow</button>
               </motion.div>

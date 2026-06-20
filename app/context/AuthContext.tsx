@@ -45,19 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
     await new Promise(r => setTimeout(r, 500));
-    const user = { ...MOCK_USER, email };
     localStorage.setItem('forge_session', 'active');
     localStorage.setItem('forge_access_token', 'mock_token');
-    setState({ user, isLoading: false, isAuthenticated: true });
+    setState({ user: { ...MOCK_USER, email }, isLoading: false, isAuthenticated: true });
   }, []);
 
   const register = useCallback(async (payload: { email: string; password: string; displayName: string; username: string }) => {
     setState(prev => ({ ...prev, isLoading: true }));
     await new Promise(r => setTimeout(r, 500));
-    const user = { ...MOCK_USER, email: payload.email, displayName: payload.displayName, username: payload.username };
     localStorage.setItem('forge_session', 'active');
     localStorage.setItem('forge_access_token', 'mock_token');
-    setState({ user, isLoading: false, isAuthenticated: true });
+    setState({ user: { ...MOCK_USER, email: payload.email, displayName: payload.displayName, username: payload.username }, isLoading: false, isAuthenticated: true });
   }, []);
 
   const logout = useCallback(async () => {
