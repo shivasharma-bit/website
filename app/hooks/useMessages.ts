@@ -51,7 +51,7 @@ export function useThread(threadId: string, currentUserId: string): UseThreadRet
   useEffect(() => {
     if (!threadId) return;
     let active = true;
-    messagesService.getMessages(threadId, currentUserId).then(msgs => {
+    messagesService.getMessages(threadId).then(msgs => {
       if (active) { setMessages(msgs); setIsLoading(false); }
     });
     return () => { active = false; };
