@@ -49,7 +49,8 @@ export const staggerItem: Variants = {
 };
 
 export const hoverLift = {
-  whileHover: { y: -2, transition: { duration: 0.18, ease: 'easeOut' } },
+  whileHover: { y: -2 },
+  transition:  { duration: 0.18 },
 };
 
 export const tapScale = {
