@@ -1,18 +1,5 @@
 import type { Metadata } from 'next';
-import { PostComposer } from '../../components/feed/PostComposer';
-import { PageWrapper, SingleColLayout } from '../../components/layout/PageWrapper';
+import { AnalyticsPageClient } from './AnalyticsPage.client';
 
-export const metadata: Metadata = { title: 'Create' };
-
-export default function CreatePage() {
-  return (
-    <PageWrapper>
-      <SingleColLayout maxWidth="lg">
-        <h1 className="text-2xl font-display font-semibold text-[var(--color-text-primary)] mb-4 tracking-tight">
-          Create a post
-        </h1>
-        <PostComposer />
-      </SingleColLayout>
-    </PageWrapper>
-  );
-}
+export const metadata: Metadata = { title: 'Analytics' };
+export default function AnalyticsPage() { return <AnalyticsPageClient />; }
